@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The McCooeye Group | Client Portal</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1B2B4B; font-family: Georgia, serif; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="./config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const B = { navy:"#1B2B4B", navyDark:"#111d33", navyLight:"rgba(27,43,75,0.08)", red:"#C8102E", redLight:"rgba(200,16,46,0.10)", white:"#FFFFFF", offWhite:"#F5F6F8", border:"#DDE2EA", text:"#1B2B4B", muted:"#6B7A99" };
+const HEADER_IMG = "./HEADER.png";
+const TEAM_IMG = "./2025TMG-20.jpg";
+const AGENTS = {
+  don: { name:"Don McCooeye", phone:"902-903-6605", email:"don@themccooeyegroup.ca", pronoun:"Don" },
+  jamie: { name:"Jamie McCooeye", phone:"902-220-6034", email:"jamie@themccooeyegroup.ca", pronoun:"Jamie" },
+};
+const PACKAGES = [
+  { name:"Smart Marketing", tag:"", rate:"3%", color:B.navy, features:["Pre-Listing Prep","Professional Photography (Drone, Interior, Exterior)","Professional Video","Listing Coordinator","Professional Marketing","Feature Sheets and Flyers"] },
+  { name:"Staging Package", tag:"Most Popular", rate:"3.5%", color:B.red, features:["Pre-Listing Prep","Professional Photography (Drone, Interior, Exterior)","Professional Video","Listing Coordinator","Professional Marketing","Professional Cleaning","Feature Sheets and Flyers","3D Tour","Floor Plans","Ad Budget with Video"] },
+  { name:"All Inclusive", tag:"", rate:"4%", color:B.navy, features:["Pre-Listing Prep","Professional Photography (Drone, Interior, Exterior)","Professional Video","Listing Coordinator","Professional Marketing","Professional Cleaning","Feature Sheets and Flyers","3D Tour","Floor Plans","Full Staging (First 30 days)","Ad Budget with Video","Lawyer Fees"] },
+];
+const makeBuyerPhases = (a) => [
+  {id:1,icon:"💬",name:"Initial Consultation",desc:`${a.pronoun} meets with you to understand your goals, timeline, and budget.`,whatToExpect:"A no-pressure conversation — in person, by phone, or video call.",tips:["Discuss your ideal neighbourhoods and must-haves","Review your financial readiness","Understand current market conditions in East Hants & HRM","Ask us anything — no question is too small"],forms:["Form 100 — Working With the Real Estate Industry","Form 301 — Buyer Designated Brokerage Agreement"]},
+  {id:2,icon:"🏦",name:"Mortgage Pre-Approval",desc:`We connect you with a mortgage broker. ${a.pronoun} and Fadila handle all coordination.`,whatToExpect:"We recommend Sheila Bianchi at The Mortgage Group, or contacts at all major banks.",tips:["Fadila books your appointment — just tell us who you'd like","Gather: T4s, NOAs, pay stubs, and bank statements","Pre-approval valid 90–120 days","Pre-approval carries much more weight than pre-qualification"],forms:["Mortgage Pre-Approval Letter (we coordinate)"]},
+  {id:3,icon:"🔍",name:"Property Search & Showings",desc:`${a.pronoun} searches MLS and off-market properties and attends every showing with you.`,whatToExpect:"Showings scheduled around you. Honest feedback, no pressure.",tips:["New listings alert you immediately","Visit homes with a critical eye","Keep notes and photos",`${a.pronoun} walks you through what to look for`],forms:[]},
+  {id:4,icon:"📝",name:"Offer Preparation",desc:`${a.pronoun} prepares your offer. Fadila coordinates all document delivery.`,whatToExpect:`${a.pronoun} reviews every term with you before signing.`,tips:["Price strategy based on CMA","Financing condition: typically 5 business days","Home inspection condition: typically 5–7 business days","Deposit typically 1–2%, due within 24 hrs of acceptance"],forms:["Form 400 — Agreement of Purchase and Sale","Form 210 — Equipment Schedule","Form 402 — Condo Schedule (if condo)","Form 431 — Water & Septic Schedule (if applicable)"]},
+  {id:5,icon:"🤝",name:"Offer Negotiation & Acceptance",desc:`${a.pronoun} negotiates hard on your behalf.`,whatToExpect:"Once both parties sign, you have a binding APS. Deposit due within 24 hours.",tips:["Counter-offers are common — stay calm",`${a.pronoun} advises when to hold firm vs. negotiate`,"Multiple offer situations need a different strategy"],forms:["Form 410 — Counter Offer (if needed)","Fully executed Form 400"]},
+  {id:6,icon:"🔎",name:"Home Inspection",desc:`We book your home inspector and coordinate access. Fadila handles all scheduling — you just show up.`,whatToExpect:"Inspection takes 2–4 hours. Detailed written report provided.",tips:["We book the inspector — just let Fadila know your timing","Attend the inspection — very educational","If major issues found, we can renegotiate or walk away"],forms:["Home Inspection Report (we book)","Form 421 — Amendment to APS (if renegotiation needed)"]},
+  {id:7,icon:"🏦",name:"Financing Confirmation",desc:"Your mortgage broker submits for formal approval. We stay in close contact.",whatToExpect:"Once approved, ready to waive your financing condition.",tips:["Do NOT make large purchases or change jobs","Provide all documents your broker requests","Approval typically 3–5 business days"],forms:["Form 408 — Buyer Waiver of Conditions","Mortgage Commitment Letter"]},
+  {id:8,icon:"✅",name:"Conditions Removed",desc:`All conditions satisfied. Deal is firm. Fadila coordinates delivery to your lawyer and lender.`,whatToExpect:"Your lawyer begins closing preparation.",tips:["The deal is now binding","Start shopping for home insurance","Book your movers"],forms:["Form 408 — Buyer Waiver of Conditions (all)","Fadila sends confirmation to all parties"]},
+  {id:9,icon:"⚖️",name:"Lawyer & Closing Prep",desc:"Fadila sends all documents to your lawyer and lender. You sign and arrange closing funds.",whatToExpect:"Deed Transfer Tax 1.5% (HRM), legal fees, title insurance, property tax adjustments.",tips:["Sign lawyer documents immediately when received","Arrange funds via certified cheque or bank wire","Total closing costs typically 1.5–3.5%"],forms:["Transfer / Deed of Land","Title Insurance","Statement of Adjustments"]},
+  {id:10,icon:"🏠",name:"Closing Day",desc:`${a.pronoun} calls when registration is confirmed and coordinates your keys.`,whatToExpect:"Registration usually by early afternoon. Stay near your phone!",tips:["Stay near your phone all day",`${a.pronoun} coordinates key pickup`,"Confirm utility transfers are in place"],forms:["Registered Deed (you receive a copy)","Final Reporting Letter from your Lawyer"]},
+  {id:11,icon:"🎉",name:"Keys in Hand!",desc:`You're officially a homeowner! Welcome home from ${a.pronoun}, Fadila, and the whole McCooeye Group family.`,whatToExpect:`${a.pronoun} follows up within a week.`,tips:["Change ALL your locks on day one","Locate your main water shut-off","Update your address: CRA, banks, Service NS, Canada Post"],forms:[]},
+];
+const makeSellerPhases = (a) => [
+  {id:1,icon:"💬",name:"Listing Consultation",desc:`${a.pronoun} visits your home, assesses its value, and presents our marketing packages to get you top dollar.`,whatToExpect:`60–90 minute visit. ${a.pronoun} presents recommended list price with market data and reviews our three packages.`,tips:["Always free and no-obligation",`${a.pronoun} prepares a full CMA`,"See the Packages tab for what's included","Pricing: as is / today's market / stars align"],forms:["Form 100 — Working With the Real Estate Industry","Seller's Estimated Net Proceeds Sheet"]},
+  {id:2,icon:"📋",name:"Listing Agreement Signed",desc:`You authorize The McCooeye Group to list your property. ${a.pronoun} and Fadila handle all paperwork.`,whatToExpect:`${a.pronoun} reviews every line. Fadila coordinates document filing.`,tips:["Typical listing period 60–90 days","Commission paid on successful sale only","FINTRAC identity verification required","Co-op brokerage commission typically 2–2.5%"],forms:["Form 200/201 — Seller Brokerage Agreement","Form 230 — MLS Residential Input Form","FINTRAC — Client Identity Verification"]},
+  {id:3,icon:"📸",name:"Preparing & Staging Your Home",desc:`${a.pronoun} guides you through staging and photography. Fadila coordinates all vendor bookings.`,whatToExpect:"Professional photos within 1–2 days of home being ready.",tips:["Deep clean everything","Declutter and depersonalize","Neutralize bold paint colours","Tend to curb appeal — first impressions start outside"],forms:["Form 211 — Property Disclosure Statement","Form 210 — Equipment Schedule","Inclusions & Exclusions list"]},
+  {id:4,icon:"🚀",name:"Active on Market",desc:"Your home is live on MLS®, our website, social media, and all major portals. Fadila manages showings.",whatToExpect:`${a.pronoun} provides regular feedback and market updates.`,tips:["Keep home show-ready at all times","Vacate during showings","Feedback from every showing shared with you"],forms:["Showing Instructions & Lockbox Authorization"]},
+  {id:5,icon:"📬",name:"Offer Received",desc:`${a.pronoun} presents the offer and walks you through every term.`,whatToExpect:"In a multiple-offer situation, we maximize your outcome.",tips:["Consider the full offer, not just price","Conditions like financing and inspection are normal","Closing date flexibility is a negotiating chip"],forms:["Form 400 — Agreement of Purchase and Sale","Form 210 — Equipment Schedule"]},
+  {id:6,icon:"🤝",name:"Negotiation & Acceptance",desc:`${a.pronoun} negotiates to get the best price and terms.`,whatToExpect:`${a.pronoun} handles all communication with buyer's agent.`,tips:["Counter-offers are normal","Price is one piece — date and conditions matter too","Buyer's deposit due within 24 hours of acceptance"],forms:["Form 410 — Counter Offer (if applicable)","Fully Executed Form 400"]},
+  {id:7,icon:"⏳",name:"Buyer's Conditions Period",desc:"Buyers working through their conditions. We keep you updated throughout.",whatToExpect:`${a.pronoun} keeps you updated. We handle any renegotiation.`,tips:["Keep home in show-ready condition","Buyer may request inspection access","Conditions period typically 5–10 business days"],forms:["Form 421 — Amendment to APS (if needed)"]},
+  {id:8,icon:"✅",name:"Conditions Removed — Deal is Firm",desc:`Buyer waived all conditions. ${a.pronoun} notifies you. Fadila sends all docs to your lawyer and lender.`,whatToExpect:"Time to start planning your move!",tips:["Begin moving arrangements now","Cancel utilities on closing date","Keep property insured until closing"],forms:["Fadila sends confirmation to all parties"]},
+  {id:9,icon:"⚖️",name:"Lawyer & Closing Prep",desc:"Fadila sends all documents to your lawyer. You sign and prepare for your move.",whatToExpect:"Lawyer provides Statement of Adjustments showing your net proceeds.",tips:["Sign lawyer documents promptly","Confirm mortgage discharge amount","Remove all belongings by closing date"],forms:["Transfer / Deed of Land","Form 202 — Direction to Pay Commissions","Discharge of Mortgage","Statement of Adjustments"]},
+  {id:10,icon:"🏠",name:"Closing Day",desc:`Your lawyer transfers the deed and receives funds. ${a.pronoun} confirms when the sale has closed.`,whatToExpect:"Funds typically received by early afternoon.",tips:["Leave home vacant and clean","Hand over all keys, garage openers, manuals","Be available by phone"],forms:["Final Reporting Letter from your Lawyer"]},
+  {id:11,icon:"🎉",name:"Sold & Funded!",desc:`Your home is sold. From ${a.pronoun}, Fadila, and everyone at The McCooeye Group — congratulations!`,whatToExpect:`${a.pronoun} follows up within a week.`,tips:["Update your address everywhere","Report capital gains to CRA if applicable","Leave us a Google review 🙏"],forms:[]},
+];
+const makeContacts = (agent) => {
+  const other = agent.name === "Don McCooeye" ? AGENTS.jamie : AGENTS.don;
+  return [
+    {id:"c1",role:"Your Agent",name:agent.name,org:"The McCooeye Group · Royal LePage Atlantic",phone:agent.phone,email:agent.email,icon:"🏡",note:"Always your first call"},
+    {id:"c1b",role:"Team Agent",name:other.name,org:"The McCooeye Group · Royal LePage Atlantic",phone:other.phone,email:other.email,icon:"🏡",note:"The McCooeye Group team"},
+    {id:"c2",role:"Operations Manager",name:"Fadila",org:"The McCooeye Group",phone:"",email:"fadila@themccooeyegroup.ca",icon:"🏢",note:"All admin, appointments & bookings"},
+    {id:"c3",role:"Real Estate Lawyer",name:"Amanda Brousseau",org:"DCL Law",phone:"",email:"",icon:"⚖️",note:"Recommended by TMG — Fadila sends all docs"},
+    {id:"c4",role:"Real Estate Lawyer",name:"Jonny English",org:"English Law",phone:"",email:"",icon:"⚖️",note:"Recommended by TMG — Fadila sends all docs"},
+    {id:"c5",role:"Real Estate Lawyer",name:"Katie & Hillary",org:"Merida Law",phone:"",email:"",icon:"⚖️",note:"Recommended by TMG — Fadila sends all docs"},
+    {id:"c6",role:"Mortgage Broker",name:"Sheila Bianchi",org:"The Mortgage Group",phone:"",email:"",icon:"🏦",note:"TMG's preferred mortgage broker — Fadila can book"},
+    {id:"c7",role:"Home Inspector",name:"Tony Wilcox",org:"Wilcox Inspections Inc.",phone:"902-802-0693",email:"wilcoxinspections@eastlink.ca",icon:"🔎",note:"We book this for you | halifaxinspections.com"},
+    {id:"c8",role:"Home Inspector",name:"Zdenko Juric",org:"A Buyer's Choice Home Inspections",phone:"902-830-9904",email:"zdenko@abuyerschoice.com",icon:"🔎",note:"We book this for you | abuyerschoice.com/zdenko-juric"},
+    {id:"c9",role:"Home Inspector",name:"Isaiah Schriver",org:"Pillar to Post — Rising Tide Team",phone:"902-201-3069",email:"isaiah.schriver@pillartopost.com",icon:"🔎",note:"We book this for you | risingtideteam.pillartopost.com"},
+    {id:"c10",role:"Septic Inspector",name:"Ken Hills",org:"Eastern Home Sanitary Video Inspection",phone:"902-471-6084",email:"ken@ehsvideoinsp.com",icon:"🚿",note:"We book this for you | ehsvi.com"},
+    {id:"c11",role:"Septic / Water Inspector",name:"Total Water Investigations",org:"Meghan MacAskill & Tracy Horning",phone:"902-209-6019",email:"",icon:"💧",note:"We book this for you | totalwaterns.ca/bookings"},
+    {id:"c12",role:"Home Insurance",name:"Your Insurer",org:"",phone:"",email:"",icon:"🛡️",note:"Required before closing — let us know if you'd like a referral"},
+  ];
+};
+const makePrompt = (agent, jt) => `You are the friendly AI assistant for The McCooeye Group — Royal LePage Atlantic, East Hants & Halifax NS.
+Client is working with ${agent.name} (${agent.phone}, ${agent.email}).
+Fadila (fadila@themccooeyegroup.ca) handles all admin, bookings, and document delivery.
+We book all inspectors. We send docs to lawyers and lenders. Clients tell us their preference, we handle the rest.
+Preferred lawyers: Amanda Brousseau (DCL Law), Jonny English (English Law), Katie & Hillary (Merida Law).
+Preferred mortgage: Sheila Bianchi (The Mortgage Group). Also have contacts at BMO, CIBC, TD, Scotiabank.
+Home inspectors we book: Tony Wilcox 902-802-0693, Zdenko Juric 902-830-9904, Isaiah Schriver 902-201-3069 (PTP Rising Tide).
+Septic/water we book: Ken Hills 902-471-6084 (Eastern Home Sanitary), Total Water 902-209-6019 totalwaterns.ca/bookings.
+Packages: Smart Marketing 3%, Staging Package 3.5% (most popular), All Inclusive 4% (includes staging + lawyer fees). Co-op 2-2.5%.
+NS costs: Deed Transfer Tax 1.5% HRM, HST exempt on resale, legal fees $1200-2500, total closing 1.5-3.5%.
+Stress test: higher of contract +2% or 5.25%. CMHC under 20% down. FHSA $40K, HBP $35K.
+Be warm, concise, 2-4 short paragraphs. This client is a ${jt==="buyer"?"BUYER":"SELLER"}.`;
+
+const BUYER_QS = ["What is deed transfer tax?","When is my deposit due?","Do I need a home inspection?","What are closing costs?","What is the APS?","What is CMHC?","What is the stress test?"];
+const SELLER_QS = ["What's included in each package?","How is my home priced?","What is a CMA?","What are my selling costs?","What is FINTRAC?","What is the holdover period?","What is capital gains tax?"];
+
+function AgentSelect({onSelect}) {
+  return (
+    <div style={{minHeight:"100vh",background:B.navy,display:"flex",flexDirection:"column",alignItems:"center",position:"relative"}}>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:B.red}}/>
+      <div style={{width:"100%",background:B.navyDark}}>
+        <img src={HEADER_IMG} alt="TMG" style={{width:"100%",display:"block",height:100,objectFit:"contain",background:B.navyDark}} onError={e=>e.target.style.display="none"}/>
+      </div>
+      <div style={{width:"100%",maxWidth:500,padding:"24px 24px 0"}}>
+        <img src={TEAM_IMG} alt="Don and Jamie McCooeye" style={{width:"100%",borderRadius:16,display:"block",boxShadow:"0 20px 60px rgba(0,0,0,0.4)"}} onError={e=>e.target.style.display="none"}/>
+      </div>
+      <div style={{padding:"28px 24px 40px",width:"100%",maxWidth:500}}>
+        <div style={{fontSize:14,color:"rgba(255,255,255,0.65)",fontFamily:"sans-serif",marginBottom:16,textAlign:"center"}}>Who is your agent?</div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {Object.entries(AGENTS).map(([key,ag])=>(
+            <button key={key} onClick={()=>onSelect(key)} style={{padding:"18px 22px",borderRadius:12,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.07)",cursor:"pointer",textAlign:"left",width:"100%"}}>
+              <div style={{fontSize:17,fontWeight:"bold",color:"#fff",marginBottom:3}}>{ag.name}</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",fontFamily:"sans-serif"}}>{ag.phone}</div>
+            </button>
+          ))}
+        </div>
+        <div style={{marginTop:20,fontSize:11,color:"rgba(255,255,255,0.3)",fontFamily:"sans-serif",textAlign:"center"}}>Not sure? Contact the office at 902-903-6605</div>
+      </div>
+    </div>
+  );
+}
+
+function PackagesTab({agent}) {
+  return (
+    <div style={{padding:"20px 20px 40px"}}>
+      <div style={{fontSize:10,letterSpacing:3,color:B.muted,fontFamily:"sans-serif",marginBottom:4}}>WHAT YOUR PROPERTY IS WORTH</div>
+      <div style={{fontSize:20,fontWeight:"bold",color:B.navy,marginBottom:16}}>How Much We Charge</div>
+      <div style={{background:B.navyLight,borderRadius:12,padding:"14px 18px",marginBottom:24}}>
+        <div style={{fontSize:11,fontFamily:"sans-serif",color:B.navy,fontWeight:700,marginBottom:10}}>PRICE STRATEGY</div>
+        {["As is / Where is price","Today's market price","If all the stars align price"].map((p,i)=>(
+          <div key={i} style={{display:"flex",gap:10,alignItems:"center",marginBottom:8,fontFamily:"sans-serif",fontSize:14,color:B.navy}}>
+            <div style={{width:24,height:24,borderRadius:"50%",background:B.navy,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:"bold",flexShrink:0}}>{i+1}</div>
+            <span>{p}</span>
+          </div>
+        ))}
+      </div>
+      {PACKAGES.map((pkg,i)=>(
+        <div key={i} style={{background:"#fff",borderRadius:14,marginBottom:14,border:`1px solid ${B.border}`,overflow:"hidden"}}>
+          <div style={{background:pkg.color,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              {pkg.tag&&<div style={{fontSize:10,fontFamily:"sans-serif",background:B.red,color:"#fff",borderRadius:20,padding:"2px 8px",display:"inline-block",marginBottom:5}}>{pkg.tag}</div>}
+              <div style={{fontSize:16,fontWeight:"bold",color:"#fff",fontFamily:"sans-serif"}}>{pkg.name}</div>
+            </div>
+            <div style={{fontSize:26,fontWeight:"bold",color:"#fff",fontFamily:"sans-serif"}}>{pkg.rate}</div>
+          </div>
+          <div style={{padding:"14px 18px"}}>
+            {pkg.features.map((f,j)=>(
+              <div key={j} style={{display:"flex",gap:8,marginBottom:6,fontFamily:"sans-serif",fontSize:13,color:B.text}}>
+                <span style={{color:B.red,flexShrink:0}}>✓</span><span>{f}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div style={{background:B.offWhite,borderRadius:12,padding:"14px 18px",border:`1px solid ${B.border}`,marginBottom:16}}>
+        <div style={{fontSize:13,fontFamily:"sans-serif",color:B.navy,lineHeight:1.6}}>Co-operating brokerage fee of <strong>2–2.5%</strong> recommended, paid to the buyer's agent on closing.</div>
+      </div>
+      <div style={{padding:"14px 18px",background:B.navy,borderRadius:12,fontFamily:"sans-serif",fontSize:13,color:"rgba(255,255,255,0.7)",textAlign:"center"}}>
+        📞 <strong style={{color:"#fff"}}>Ready to list?</strong> Call {agent.name} at {agent.phone}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [agentKey, setAgentKey] = useState(null);
+  const [tab, setTab] = useState("roadmap");
+  const [jt, setJt] = useState("buyer");
+  const [bPhase, setBPhase] = useState(4);
+  const [sPhase, setSPhase] = useState(3);
+  const [contacts, setContacts] = useState(null);
+  const [msgs, setMsgs] = useState(null);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const msgEnd = useRef(null);
+
+  const agent = agentKey ? AGENTS[agentKey] : null;
+  const phases = agent ? (jt==="buyer" ? makeBuyerPhases(agent) : makeSellerPhases(agent)) : [];
+  const phase = jt==="buyer" ? bPhase : sPhase;
+  const setPhase = jt==="buyer" ? setBPhase : setSPhase;
+  const curMsgs = msgs?.[jt] || [];
+  const quickQs = jt==="buyer" ? BUYER_QS : SELLER_QS;
+  const tabs = [{id:"roadmap",label:"Roadmap",e:"🗺️"},...(jt==="seller"?[{id:"packages",label:"Packages",e:"💼"}]:[]),{id:"ask",label:"Ask TMG",e:"💬"},{id:"contacts",label:"Contacts",e:"📋"}];
+
+  const selectAgent = (key) => {
+    setAgentKey(key);
+    const ag = AGENTS[key];
+    const defaultContacts = makeContacts(ag);
+    try { const s=localStorage.getItem(`tmg_c_${key}`); if(s) setContacts(JSON.parse(s)); else setContacts(defaultContacts); } 
+    catch{ setContacts(defaultContacts); }
+    setMsgs({
+      buyer:[{role:"assistant",content:`Welcome! 👋 I'm the TMG assistant.\n\nI'm here to support your home buying journey with ${ag.name} and the team. We handle all coordination — inspector bookings, document delivery — so you focus on the exciting parts.\n\nWhat's on your mind?`}],
+      seller:[{role:"assistant",content:`Welcome! 👋 I'm the TMG assistant.\n\nI'm here to support selling your home with ${ag.name} and the team. Check the Packages tab to see what's included at each commission level.\n\nWhat's on your mind?`}]
+    });
+  };
+
+  useEffect(()=>{ if(tab==="packages"&&jt==="buyer") setTab("roadmap"); },[jt]);
+  useEffect(()=>{ if(agentKey&&contacts) { try{localStorage.setItem(`tmg_c_${agentKey}`,JSON.stringify(contacts));}catch{} } },[contacts]);
+  useEffect(()=>{ msgEnd.current?.scrollIntoView({behavior:"smooth"}); },[msgs,loading]);
+
+  const send = async (text) => {
+    if(!agent||!msgs) return;
+    const msg=text||input.trim(); if(!msg||loading) return;
+    setInput("");
+    const updated=[...curMsgs,{role:"user",content:msg}];
+    setMsgs(p=>({...p,[jt]:updated}));
+    setLoading(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":window.TMG_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,system:makePrompt(agent,jt),messages:updated.map(m=>({role:m.role,content:m.content}))})
+      });
+      const data=await res.json();
+      const reply = data.content?.[0]?.text || `Please call ${agent.name} at ${agent.phone}.`;
+      setMsgs(p=>({...p,[jt]:[...updated,{role:"assistant",content:reply}]}));
+    } catch(e) {
+      setMsgs(p=>({...p,[jt]:[...updated,{role:"assistant",content:`Please call ${agent.name} at ${agent.phone} or email Fadila at fadila@themccooeyegroup.ca.`}]}));
+    }
+    setLoading(false);
+  };
+
+  if(!agentKey) return <AgentSelect onSelect={selectAgent}/>;
+
+  return (
+    <div style={{minHeight:"100vh",background:B.offWhite,display:"flex",flexDirection:"column",maxWidth:760,margin:"0 auto",boxShadow:"0 0 40px rgba(0,0,0,0.1)"}}>
+      <div style={{background:B.navy,position:"relative"}}>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:B.red,zIndex:2}}/>
+        <img src={HEADER_IMG} alt="TMG" style={{width:"100%",display:"block",height:90,objectFit:"contain",background:B.navyDark}} onError={e=>e.target.style.display="none"}/>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 18px 12px"}}>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",fontFamily:"sans-serif"}}>East Hants & Halifax REALTORS®</div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:10,color:B.red,fontFamily:"sans-serif",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>Your Agent</div>
+            <div style={{fontSize:13,color:"#fff"}}>{agent.name} · {agent.phone}</div>
+            <button onClick={()=>setAgentKey(null)} style={{fontSize:10,color:"rgba(255,255,255,0.35)",fontFamily:"sans-serif",background:"none",border:"none",cursor:"pointer",textDecoration:"underline",padding:0}}>switch agent</button>
+          </div>
+        </div>
+        <div style={{padding:"0 18px 14px"}}>
+          <div style={{display:"flex",background:"rgba(255,255,255,0.08)",borderRadius:12,padding:4,gap:4}}>
+            {["buyer","seller"].map(type=>(
+              <button key={type} onClick={()=>{setJt(type);setExpanded(null);}} style={{flex:1,padding:"10px 0",border:"none",borderRadius:9,cursor:"pointer",background:jt===type?"#fff":"transparent",color:jt===type?B.navy:"rgba(255,255,255,0.65)",fontFamily:"sans-serif",fontSize:14,fontWeight:700}}>
+                {type==="buyer"?"🏠 I'm Buying":"🏷️ I'm Selling"}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{display:"flex",background:"#fff",borderBottom:`2px solid ${B.border}`}}>
+        {tabs.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"12px 6px",border:"none",borderBottom:tab===t.id?`3px solid ${B.red}`:"3px solid transparent",background:tab===t.id?"#fafbfd":"#fff",color:tab===t.id?B.navy:B.muted,fontFamily:"sans-serif",fontSize:12,fontWeight:tab===t.id?700:400,cursor:"pointer"}}>
+            {t.e} {t.label}
+          </button>
+        ))}
+      </div>
+      <div style={{flex:1}}>
+        {tab==="roadmap"&&(
+          <div style={{padding:"20px 20px 40px"}}>
+            <div style={{background:B.navy,borderRadius:14,padding:"16px 18px",marginBottom:20,borderTop:`4px solid ${B.red}`}}>
+              <div style={{fontSize:10,letterSpacing:3,color:"rgba(255,255,255,0.4)",fontFamily:"sans-serif",marginBottom:8}}>{jt==="buyer"?"YOUR BUYING JOURNEY — NOW":"YOUR SELLING JOURNEY — NOW"}</div>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{fontSize:34}}>{phases[phase-1]?.icon}</div>
+                <div>
+                  <div style={{fontSize:17,color:"#fff",fontWeight:"bold"}}>{phases[phase-1]?.name}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",marginTop:4,lineHeight:1.6,fontFamily:"sans-serif"}}>{phases[phase-1]?.desc}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontFamily:"sans-serif",fontSize:11,color:B.muted,marginBottom:6}}>
+                <span>STEP {phase} OF {phases.length}</span><span>{Math.round((phase/phases.length)*100)}% COMPLETE</span>
+              </div>
+              <div style={{height:6,background:B.border,borderRadius:4,overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${(phase/phases.length)*100}%`,background:`linear-gradient(90deg,${B.navyDark},${B.navy})`,borderRadius:4}}/>
+              </div>
+            </div>
+            {phases.map((p,i)=>{
+              const done=p.id<phase,active=p.id===phase,open=expanded===p.id;
+              return (
+                <div key={p.id} style={{display:"flex",gap:12}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:42}}>
+                    <div onClick={()=>setExpanded(open?null:p.id)} style={{width:42,height:42,borderRadius:"50%",background:done?B.navy:active?"#fff":B.offWhite,border:done?`2px solid ${B.navy}`:active?`2px solid ${B.red}`:`2px solid ${B.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:done?16:20,cursor:"pointer",boxShadow:active?`0 0 0 4px rgba(200,16,46,0.15)`:"none",color:done?"#fff":"inherit"}}>
+                      {done?"✓":p.icon}
+                    </div>
+                    {i<phases.length-1&&<div style={{width:2,flex:1,minHeight:16,background:done?B.navy:B.border,margin:"4px 0"}}/>}
+                  </div>
+                  <div onClick={()=>setExpanded(open?null:p.id)} style={{flex:1,padding:"8px 12px",marginBottom:6,borderRadius:10,cursor:"pointer",background:active?"#fff":"transparent",border:active?`1px solid ${B.red}`:"1px solid transparent"}}>
+                    <div style={{fontSize:14,fontWeight:active?"bold":done?600:"normal",color:active?B.navy:done?"#3a4a6a":B.border,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      {p.name}
+                      {active&&<span style={{fontSize:10,fontFamily:"sans-serif",background:B.red,color:"#fff",borderRadius:20,padding:"2px 8px"}}>NOW</span>}
+                    </div>
+                    {(active||open)&&(
+                      <div style={{marginTop:10}}>
+                        <div style={{fontSize:13,color:"#3a4a5a",lineHeight:1.7,fontFamily:"sans-serif",marginBottom:10}}>{p.desc}</div>
+                        {p.whatToExpect&&<div style={{background:B.navyLight,borderRadius:8,padding:"10px 14px",marginBottom:10}}>
+                          <div style={{fontSize:11,fontFamily:"sans-serif",color:B.navy,fontWeight:700,marginBottom:4}}>WHAT TO EXPECT</div>
+                          <div style={{fontSize:13,color:B.navy,fontFamily:"sans-serif",lineHeight:1.6}}>{p.whatToExpect}</div>
+                        </div>}
+                        <div style={{fontSize:11,fontFamily:"sans-serif",color:B.muted,fontWeight:700,marginBottom:6}}>KEY TIPS</div>
+                        {p.tips.map((tip,j)=><div key={j} style={{display:"flex",gap:8,fontSize:13,color:"#445",fontFamily:"sans-serif",marginBottom:5}}><span style={{color:B.red}}>›</span><span>{tip}</span></div>)}
+                        {p.forms?.length>0&&<div style={{marginTop:8}}>
+                          <div style={{fontSize:11,fontFamily:"sans-serif",color:B.muted,fontWeight:700,marginBottom:6}}>FORMS & DOCUMENTS</div>
+                          {p.forms.map((f,j)=><div key={j} style={{display:"flex",gap:8,fontSize:12,color:B.navy,fontFamily:"sans-serif",marginBottom:4,background:"#fff",padding:"6px 10px",borderRadius:6,border:`1px solid ${B.border}`}}><span>📄</span><span>{f}</span></div>)}
+                        </div>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {tab==="packages"&&jt==="seller"&&<PackagesTab agent={agent}/>}
+        {tab==="ask"&&(
+          <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 220px)",minHeight:400}}>
+            <div style={{background:jt==="buyer"?B.navyLight:B.redLight,padding:"10px 20px",borderBottom:`1px solid ${B.border}`}}>
+              <div style={{fontSize:12,fontFamily:"sans-serif",color:B.navy,fontWeight:600}}>{jt==="buyer"?"🏠 Buyer Assistant":"🏷️ Seller Assistant"} — Ask me anything</div>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:"16px 20px 0"}}>
+              {curMsgs.map((m,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:14}}>
+                  {m.role==="assistant"&&<div style={{width:32,height:32,borderRadius:"50%",background:B.navy,border:`2px solid ${B.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,marginRight:10,flexShrink:0,marginTop:2}}>🏡</div>}
+                  <div style={{maxWidth:"78%",background:m.role==="user"?B.navy:"#fff",color:m.role==="user"?"#fff":B.text,borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"12px 16px",fontSize:14,lineHeight:1.65,fontFamily:"sans-serif",border:m.role==="assistant"?`1px solid ${B.border}`:"none",whiteSpace:"pre-wrap"}}>{m.content}</div>
+                </div>
+              ))}
+              {loading&&<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:B.navy,border:`2px solid ${B.red}`,display:"flex",alignItems:"center",justifyContent:"center"}}>🏡</div>
+                <div style={{background:"#fff",border:`1px solid ${B.border}`,borderRadius:"18px 18px 18px 4px",padding:"14px 18px",display:"flex",gap:6}}>
+                  {[0,1,2].map(j=><div key={j} style={{width:7,height:7,borderRadius:"50%",background:B.navy,animation:`bounce 1.2s infinite`,animationDelay:`${j*0.2}s`}}/>)}
+                </div>
+              </div>}
+              <div ref={msgEnd}/>
+            </div>
+            <div style={{padding:"8px 20px 0",overflowX:"auto"}}>
+              <div style={{display:"flex",gap:8,paddingBottom:8}}>
+                {quickQs.map((q,i)=><button key={i} onClick={()=>send(q)} style={{whiteSpace:"nowrap",padding:"7px 14px",borderRadius:20,border:`1px solid ${B.navy}`,background:B.navyLight,color:B.navy,fontSize:12,fontFamily:"sans-serif",cursor:"pointer",flexShrink:0}}>{q}</button>)}
+              </div>
+            </div>
+            <div style={{padding:"8px 20px 14px",display:"flex",gap:10}}>
+              <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder={jt==="buyer"?"Ask anything about buying...":"Ask anything about selling..."} style={{flex:1,padding:"13px 16px",borderRadius:12,border:`1px solid ${B.border}`,fontSize:14,fontFamily:"sans-serif",outline:"none"}}/>
+              <button onClick={()=>send()} disabled={loading||!input.trim()} style={{padding:"13px 18px",borderRadius:12,border:"none",background:loading||!input.trim()?B.border:B.navy,color:"#fff",fontSize:18,cursor:"pointer"}}>➤</button>
+            </div>
+          </div>
+        )}
+        {tab==="contacts"&&contacts&&(
+          <div style={{padding:"20px 20px 40px"}}>
+            <div style={{fontSize:10,letterSpacing:3,color:B.muted,fontFamily:"sans-serif",marginBottom:16}}>YOUR TRUSTED TEAM</div>
+            {contacts.map((c,i)=>(
+              <div key={c.id} style={{background:"#fff",borderRadius:14,padding:"16px 18px",marginBottom:10,border:`1px solid ${B.border}`,borderLeft:i<3?`4px solid ${B.red}`:`1px solid ${B.border}`}}>
+                <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:i<3?B.navy:B.offWhite,border:i<3?`2px solid ${B.red}`:`1px solid ${B.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{c.icon}</div>
+                  <div>
+                    <div style={{fontSize:10,fontFamily:"sans-serif",color:B.red,letterSpacing:1,textTransform:"uppercase",marginBottom:2}}>{c.role}</div>
+                    <div style={{fontSize:15,fontWeight:"bold",color:B.navy}}>{c.name}</div>
+                    {c.org&&<div style={{fontSize:12,color:B.muted,fontFamily:"sans-serif",marginTop:1}}>{c.org}</div>}
+                  </div>
+                </div>
+                {c.note&&<div style={{marginTop:8,padding:"7px 12px",background:B.offWhite,borderRadius:8,fontSize:12,color:"#6a5a3a",fontFamily:"sans-serif",fontStyle:"italic"}}>💡 {c.note}</div>}
+                {(c.phone||c.email)&&<div style={{display:"flex",gap:8,marginTop:10}}>
+                  {c.phone&&<a href={`tel:${c.phone}`} style={{flex:1,padding:"9px",borderRadius:9,background:i<3?B.navy:B.offWhite,color:i<3?"#fff":B.navy,textAlign:"center",fontFamily:"sans-serif",fontSize:13,fontWeight:600,textDecoration:"none",display:"block"}}>📞 {c.phone}</a>}
+                  {c.email&&<a href={`mailto:${c.email}`} style={{flex:1,padding:"9px",borderRadius:9,background:B.offWhite,color:B.navy,textAlign:"center",fontFamily:"sans-serif",fontSize:13,fontWeight:600,textDecoration:"none",display:"block",border:`1px solid ${B.border}`}}>✉️ Email</a>}
+                </div>}
+              </div>
+            ))}
+            <div style={{marginTop:12,padding:"14px 18px",background:B.navy,borderRadius:14,fontFamily:"sans-serif",fontSize:13,color:"rgba(255,255,255,0.65)",textAlign:"center",lineHeight:1.6}}>
+              🏡 <strong style={{color:"#fff"}}>When in doubt, call {agent.name} first.</strong><br/>For admin & bookings — contact Fadila at fadila@themccooeyegroup.ca
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
