@@ -203,9 +203,9 @@ function App() {
     setMsgs(p=>({...p,[jt]:updated}));
     setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
+      const res = await fetch("/api/chat",{
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":window.TMG_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-iab":"true"},
+        headers:{"Content-Type":"application/json",},
         body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:800,system:makePrompt(agent,jt),messages:updated.map(m=>({role:m.role,content:m.content}))})
       });
       const data=await res.json();
